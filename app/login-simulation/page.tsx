@@ -15,7 +15,9 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Fish } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-export default function LoginSimulationPage() {
+import { Suspense } from 'react';
+
+function LoginSimulationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -64,9 +66,9 @@ export default function LoginSimulationPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-                <Fish className="h-10 w-10 text-blue-600" />
-            </div>
+          <div className="flex justify-center mb-4">
+            <Fish className="h-10 w-10 text-blue-600" />
+          </div>
           <CardTitle>Sign in to your account</CardTitle>
           <CardDescription>
             Use your corporate credentials to sign in.
@@ -97,5 +99,17 @@ export default function LoginSimulationPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function LoginSimulationPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <LoginSimulationContent />
+    </Suspense>
   );
 }
