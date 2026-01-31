@@ -1,10 +1,13 @@
 'use client';
+
+import { use } from 'react';
 import Image from 'next/image';
 import { ShieldAlert } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Quiz } from '@/components/landing/quiz';
 
-export default function LandingPage({ params }: { params: { id: string } }) {
+export default function LandingPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 antialiased">
@@ -45,5 +48,3 @@ export default function LandingPage({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
-    
