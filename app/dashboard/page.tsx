@@ -1,15 +1,10 @@
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { CampaignsTable } from "@/components/dashboard/campaigns-table";
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Dashboard | PhishAware',
-  description: 'Admin dashboard for PhishAware.',
-};
-
 import { PageTransition, FadeIn } from "@/components/ui/animations";
 import { motion } from "framer-motion";
 

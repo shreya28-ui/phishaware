@@ -1,12 +1,7 @@
+'use client';
+
 import { NewCampaignForm } from "@/components/campaigns/new-campaign-form";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'New Campaign | PhishAware',
-  description: 'Create a new phishing simulation campaign.',
-};
-
 import { PageTransition } from "@/components/ui/animations";
 import { motion } from "framer-motion";
 

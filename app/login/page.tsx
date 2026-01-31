@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Card,
   CardContent,
@@ -8,12 +10,6 @@ import {
 import { UserAuthForm } from '@/components/auth/user-auth-form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Fish } from 'lucide-react';
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Login | PhishAware',
-  description: 'Login or create an account to get started.',
-};
 
 import { motion, AnimatePresence } from 'framer-motion';
 
