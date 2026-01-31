@@ -33,6 +33,8 @@ interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
   mode: 'login' | 'signup';
 }
 
+import { motion } from 'framer-motion';
+
 export function UserAuthForm({ className, mode, ...props }: UserAuthFormProps) {
   const auth = useAuth();
   const { user } = useUser();
@@ -45,10 +47,10 @@ export function UserAuthForm({ className, mode, ...props }: UserAuthFormProps) {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormData>({
+  } = useForm<any>({
     resolver: zodResolver(formSchema),
   });
-  
+
   React.useEffect(() => {
     if (user) {
       redirect('/dashboard');
@@ -59,12 +61,12 @@ export function UserAuthForm({ className, mode, ...props }: UserAuthFormProps) {
     setIsLoading(true);
 
     if (mode === 'signup') {
-        localStorage.setItem('pendingSignupName', (data as any).name);
-        initiateEmailSignUp(auth, data.email, (data as any).password);
-        toast({
-            title: 'Account created.',
-            description: 'You are now being redirected.',
-        });
+      localStorage.setItem('pendingSignupName', (data as any).name);
+      initiateEmailSignUp(auth, data.email, (data as any).password);
+      toast({
+        title: 'Account created.',
+        description: 'You are now being redirected.',
+      });
     } else {
       initiateEmailSignIn(auth, data.email, data.password);
       toast({
@@ -74,12 +76,32 @@ export function UserAuthForm({ className, mode, ...props }: UserAuthFormProps) {
     }
   }
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
     <div className={cn('grid gap-6', className)} {...props}>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid gap-4">
+        <motion.div
+          className="grid gap-4"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
           {mode === 'signup' && (
-            <div className="grid gap-1">
+            <motion.div className="grid gap-1" variants={itemVariants}>
               <Label htmlFor="name">Name</Label>
               <Input
                 id="name"
@@ -90,13 +112,14 @@ export function UserAuthForm({ className, mode, ...props }: UserAuthFormProps) {
                 autoCorrect="off"
                 disabled={isLoading}
                 {...register('name')}
+                className="transition-all focus:ring-2 focus:ring-primary/20"
               />
-              {errors?.name && 'message' in errors.name && (
-                <p className="px-1 text-xs text-red-600">{errors.name.message}</p>
+              {errors?.name && (
+                <p className="px-1 text-xs text-red-600 font-medium">{(errors.name as any).message}</p>
               )}
-            </div>
+            </motion.div>
           )}
-          <div className="grid gap-1">
+          <motion.div className="grid gap-1" variants={itemVariants}>
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
@@ -107,12 +130,13 @@ export function UserAuthForm({ className, mode, ...props }: UserAuthFormProps) {
               autoCorrect="off"
               disabled={isLoading}
               {...register('email')}
+              className="transition-all focus:ring-2 focus:ring-primary/20"
             />
             {errors?.email && (
-              <p className="px-1 text-xs text-red-600">{errors.email.message}</p>
+              <p className="px-1 text-xs text-red-600 font-medium">{(errors.email as any).message}</p>
             )}
-          </div>
-          <div className="grid gap-1">
+          </motion.div>
+          <motion.div className="grid gap-1" variants={itemVariants}>
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
@@ -121,21 +145,27 @@ export function UserAuthForm({ className, mode, ...props }: UserAuthFormProps) {
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               disabled={isLoading}
               {...register('password')}
+              className="transition-all focus:ring-2 focus:ring-primary/20"
             />
             {errors?.password && (
-              <p className="px-1 text-xs text-red-600">{errors.password.message}</p>
+              <p className="px-1 text-xs text-red-600 font-medium">{(errors.password as any).message}</p>
             )}
-          </div>
-          <button className={cn(buttonVariants())} disabled={isLoading}>
+          </motion.div>
+          <motion.button
+            className={cn(buttonVariants(), "mt-2 shadow-lg hover:shadow-primary/30 transition-shadow")}
+            disabled={isLoading}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            variants={itemVariants}
+          >
             {isLoading && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
             {mode === 'login' ? 'Sign In' : 'Sign Up'}
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       </form>
     </div>
   );
 }
 
-    
