@@ -1,0 +1,174 @@
+/**
+ * This ruleset enforces a strict, multi-tenant security model for the PhishAware
+ * application, where all data is owned by and isolated to a specific administrator.
+ *
+ * Core Philosophy:
+ * The security model is centered on administrator ownership. Each admin operates
+ * within their own secure data tree, preventing any cross-tenant data access.
+ * Non-administrator interactions (e.g., a phishing target clicking a link) are
+ * handled by allowing anonymous, narrowly-scoped create operations on specific
+ * collections, while all read and administrative actions remain restricted to the
+ * owning admin.
+ *
+ * Data Structure:
+ * All application data is hierarchically nested under the /admins/{adminId} path.
+ * This structure naturally isolates data per administrator, making security rules
+ * simple and efficient. For example, all campaigns for a given admin are located
+ * at /admins/{adminId}/phishingCampaigns/{campaignId}.
+ *
+ * Key Security Decisions:
+ * - Default Deny: All access is denied by default. Rules are explicit grants.
+ * - Admin-Only Access: Admins can only read or write data within their own
+ *   path (/admins/{adminId}/...). Access to another admin's data is prohibited.
+ * - Anonymous Writes for Interactions: To allow the application to function,
+ *   anonymous users (phishing targets) are permitted to create documents in the
+ *   'userInteractions' and 'quizCompletion' collections. However, they cannot
+ *   read, update, or delete any data, including the documents they just created.
+ *
+ * Denormalization for Authorization:
+ * To ensure high-performance and secure authorization, rules rely on data
+ * denormalized into the document path and body. The {adminId} in the path and
+ * the `adminId` field in a document are the primary authorities for access
+ * decisions, eliminating the need for slow and costly cross-document `get()` calls.
+ *
+ * Structural Segregation:
+ * The data model uses separate collections for different data types (e.g.,
+ * phishingCampaigns, participantLists), each with a consistent security posture
+ * based on the parent admin's ownership. This avoids mixing data with different
+ * access requirements in the same collection.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper Functions
+    
+    /**
+     * Checks if a user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is the primary function for verifying resource ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks for ownership on an existing document. Used for safe updates and deletes.
+     * Prevents operations on documents that do not exist.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+    
+    // NOTE: CollectionGroup query rule removed.
+    // The app now queries each phishingEmail's userInteractions subcollection directly,
+    // which is covered by the specific path rule below at:
+    // /admins/{adminId}/phishingCampaigns/{id}/phishingEmails/{emailId}/userInteractions/{interactionId}
+
+    /**
+     * @description Rules for the Admin user profile document.
+     * @path /admins/{adminId}
+     * @allow (create) A new user can create their own admin profile document. `auth.uid` must match `{adminId}`.
+     * @deny (create) A user cannot create a profile for another user's ID.
+     * @principle Enforces self-creation and ownership of user-specific root documents.
+     */
+    match /admins/{adminId} {
+      allow get: if isOwner(adminId);
+      allow list: if false;
+      allow create: if isOwner(adminId) && request.resource.data.id == adminId;
+      allow update: if isExistingOwner(adminId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(adminId);
+
+      /**
+       * @description Rules for phishing campaigns owned by an admin.
+       * @path /admins/{adminId}/phishingCampaigns/{phishingCampaignId}
+       * @allow (create) The admin can create a new phishing campaign.
+       * @deny (get) An admin cannot read a campaign belonging to another admin.
+       * @principle Restricts access to a user's own data tree using path-based ownership.
+       */
+      match /phishingCampaigns/{phishingCampaignId} {
+        allow get: if isOwner(adminId);
+        allow list: if isOwner(adminId);
+        allow create: if isOwner(adminId) && request.resource.data.adminId == adminId;
+        allow update: if isExistingOwner(adminId) && request.resource.data.adminId == resource.data.adminId;
+        allow delete: if isExistingOwner(adminId);
+
+        /**
+         * @description Rules for phishing emails within a specific campaign.
+         * @path /admins/{adminId}/phishingCampaigns/{phishingCampaignId}/phishingEmails/{phishingEmailId}
+         * @allow (list) The owning admin can list all emails for their campaign.
+         * @deny (update) An admin cannot update an email in another admin's campaign.
+         * @principle Enforces deep ownership within a nested data structure.
+         */
+        match /phishingEmails/{phishingEmailId} {
+          allow get: if isOwner(adminId);
+          allow list: if isOwner(adminId);
+          allow create: if isOwner(adminId) && request.resource.data.phishingCampaignId == phishingCampaignId;
+          allow update: if isExistingOwner(adminId) && request.resource.data.phishingCampaignId == resource.data.phishingCampaignId;
+          allow delete: if isExistingOwner(adminId);
+
+          /**
+           * @description Rules for user interactions (single document access).
+           * 
+           * IMPORTANT: This rule handles GET (single document reads) and WRITE operations.
+           * The LIST operation for collectionGroup queries is handled by the rule above
+           * at /{path=**}/userInteractions/{userInteractionId}.
+           * 
+           * This separation is necessary because:
+           * - GET = reading a single document by its exact path
+           * - LIST = querying multiple documents (used by collectionGroup)
+           * 
+           * @path .../phishingEmails/{phishingEmailId}/userInteractions/{userInteractionId}
+           * @principle Allows public creation for data capture while restricting all other access to the data owner.
+           */
+          match /userInteractions/{userInteractionId} {
+            // GET is for single document reads by exact path
+            // LIST is for querying the subcollection directly (not via collectionGroup)
+            allow get, list: if isOwner(adminId);
+            
+            // CREATE allows anonymous users (phishing targets) to create interaction records
+            allow create: if request.resource.data.adminId == adminId;
+            
+            // UPDATE and DELETE restricted to the owning admin
+            allow update, delete: if isExistingOwner(adminId);
+
+            /**
+             * @description Rules for quiz completions associated with a user interaction.
+             * @path .../userInteractions/{userInteractionId}/quizCompletion/{quizCompletionId}
+             * @allow (create) An anonymous user can create a quiz completion record.
+             * @deny (get) The admin of a different campaign cannot read this record.
+             * @principle Allows public creation for data capture while restricting all other access to the data owner.
+             */
+            match /quizCompletion/{quizCompletionId} {
+              allow get: if isOwner(adminId);
+              allow list: if isOwner(adminId);
+              allow create: if true;
+              allow update: if false;
+              allow delete: if false;
+            }
+          }
+        }
+      }
+
+      /**
+       * @description Rules for participant lists owned by an admin.
+       * @path /admins/{adminId}/participantLists/{participantListId}
+       * @allow (get) The owning admin can read their own participant lists.
+       * @principle Validates relational integrity on create and update.
+       */
+      match /participantLists/{participantListId} {
+        allow get: if isOwner(adminId);
+        allow list: if isOwner(adminId);
+        allow create: if isOwner(adminId) && request.resource.data.adminId == adminId;
+        allow update: if isExistingOwner(adminId) && request.resource.data.adminId == resource.data.adminId;
+        allow delete: if isExistingOwner(adminId);
+      }
+    }
+  }
+}

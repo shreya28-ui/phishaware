@@ -1,0 +1,28 @@
+{
+  "placeholderImages": [
+    {
+      "id": "phishing-email-example",
+      "description": "An example of a phishing email in an inbox.",
+      "imageUrl": "https://images.unsplash.com/photo-1596526131083-e8c633c948d2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxlbWFpbCUyMGluYm94fGVufDB8fHx8MTc2OTg0NzMwM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "email inbox"
+    },
+    {
+      "id": "cyber-security-lock",
+      "description": "A digital padlock symbolizing cyber security.",
+      "imageUrl": "https://images.unsplash.com/photo-1523961131990-5ea7c61b2107?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxkaWdpdGFsJTIwc2VjdXJpdHl8ZW58MHx8fHwxNzY5NzYyNDM5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "digital security"
+    },
+    {
+      "id": "data-analysis-chart",
+      "description": "A chart showing data analysis and statistics.",
+      "imageUrl": "https://images.unsplash.com/photo-1591696205602-2f950c417cb9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxkYXRhJTIwY2hhcnR8ZW58MHx8fHwxNzY5NzU4MjA3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "data chart"
+    },
+    {
+      "id": "company-logo-placeholder",
+      "description": "A placeholder for a generic company logo.",
+      "imageUrl": "https://images.unsplash.com/photo-1496200186974-4293800e2c20?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjb21wYW55JTIwbG9nb3xlbnwwfHx8fDE3Njk4MDE3MjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "company logo"
+    }
+  ]
+}
